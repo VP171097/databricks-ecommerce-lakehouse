@@ -30,8 +30,8 @@ def make_bronze(source: str) -> None:
             spark.readStream.format("cloudFiles")
             .option("cloudFiles.format", "csv")
             .option("header", "true")
-            .option("cloudFiles.inferColumnTypes", "false")
-            .option("cloudFiles.schemaEvolutionMode", "rescue")
+            .option("rescuedDataColumn", "_rescued_data")
+            .schema(C.bronze_schema(source))  # explicit: empty folders are fine
         )
         if source == "order_reviews":
             reader = reader.option("multiLine", "true").option("quote", '"').option("escape", '"')

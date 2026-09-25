@@ -15,7 +15,7 @@ from pathlib import Path
 
 from _common import read_manifest
 
-from ecom.config import LANDING_PATH
+from ecom.config import LANDING_PATH, SOURCES
 
 LOG = Path("data/upload_log.csv")
 SPECIAL = {"9999_bad_rows"}  # only uploaded when named explicitly
@@ -52,6 +52,9 @@ class VolumeTarget:
         except NotFound:
             return False
 
+    def ensure_dir(self, source: str) -> None:
+        self.w.files.create_directory(f"{self.base}/{source}")
+
     def upload(self, local: Path, path: str) -> None:
         self.w.files.create_directory(path.rsplit("/", 1)[0])
         with local.open("rb") as fh:
@@ -75,6 +78,11 @@ class AdlsTarget:
 
     def exists(self, path: str) -> bool:
         return self.fs.get_file_client(path).exists()
+
+    def ensure_dir(self, source: str) -> None:
+        directory = self.fs.get_directory_client(f"{self.prefix}/{source}")
+        if not directory.exists():
+            directory.create_directory()
 
     def upload(self, local: Path, path: str) -> None:
         directory = self.fs.get_directory_client(path.rsplit("/", 1)[0])
@@ -118,6 +126,9 @@ def main() -> None:
     group.add_argument("--batch")
     group.add_argument("--next", action="store_true")
     group.add_argument("--all", action="store_true")
+    group.add_argument(
+        "--init-folders", action="store_true", help="only create one landing folder per source"
+    )
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--profile", default="portfolio")
     ap.add_argument("--target", choices=["volume", "adls"], default="volume")
@@ -127,6 +138,17 @@ def main() -> None:
     ap.add_argument("--prefix", default="ecom")
     ap.add_argument("--batches", default="data/batches", type=Path)
     args = ap.parse_args()
+
+    if args.init_folders:
+        target = (
+            AdlsTarget(args.account, args.container, args.prefix)
+            if args.target == "adls"
+            else VolumeTarget(args.profile, args.volume_path)
+        )
+        for source in SOURCES:
+            target.ensure_dir(source)
+            print(f"folder ready: {source}")
+        return
 
     manifest = read_manifest(args.batches / "batch_manifest.csv")
     all_batches = sorted({r["batch_id"] for r in manifest} - SPECIAL)
@@ -157,6 +179,10 @@ def main() -> None:
             f"{args.prefix if args.target == 'adls' else args.volume_path}/{source}/{name}"
         )
     )
+
+    if target:  # every source folder must exist before the pipeline starts
+        for source in SOURCES:
+            target.ensure_dir(source)
 
     uploaded = skipped = failed = 0
     for i, batch_id in enumerate(todo):
