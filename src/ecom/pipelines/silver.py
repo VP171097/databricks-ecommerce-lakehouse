@@ -1,12 +1,36 @@
-"""Silver: typed, deduplicated, validated tables plus quarantine tables."""
+﻿"""Silver: typed, deduplicated, validated tables plus quarantine tables."""
 
 import os
 import sys
 
-try:
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-except NameError:
-    pass
+def _setup_sys_path():
+    candidates = []
+    if "__file__" in globals() and __file__:
+        raw = __file__
+        candidates.extend([
+            raw,
+            f"/Workspace/Users/{raw.lstrip('/')}",
+            f"/Workspace/{raw.lstrip('/')}",
+        ])
+    cwd = os.getcwd()
+    candidates.extend([cwd, f"/Workspace/{cwd.lstrip('/')}"])
+
+    for candidate in candidates:
+        curr = candidate
+        for _ in range(7):
+            src_dir = os.path.join(curr, "src")
+            if os.path.isdir(src_dir) and src_dir not in sys.path:
+                sys.path.insert(0, src_dir)
+                return
+            if os.path.isdir(os.path.join(curr, "ecom")) and curr not in sys.path:
+                sys.path.insert(0, curr)
+                return
+            parent = os.path.dirname(curr)
+            if parent == curr:
+                break
+            curr = parent
+
+_setup_sys_path()
 
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
