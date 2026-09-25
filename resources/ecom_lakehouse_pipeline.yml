@@ -1,0 +1,18 @@
+resources:
+  pipelines:
+    ecom_lakehouse_pipeline:
+      name: ecom_lakehouse_pipeline
+      catalog: ${var.catalog}
+      schema: ecom_bronze
+      serverless: true
+      continuous: false
+      channel: CURRENT
+      configuration:
+        ecom.landing_path: ${var.landing_path}
+      libraries:
+        - file:
+            path: ../src/ecom/pipelines/bronze.py
+        - file:
+            path: ../src/ecom/pipelines/silver.py
+        - file:
+            path: ../src/ecom/pipelines/gold.py

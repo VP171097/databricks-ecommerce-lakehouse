@@ -1,6 +1,13 @@
-pytest
-pytest-cov
-black
-flake8
-databricks-sdk
-kaggle
+pyspark==3.5.*
+pytest>=8
+pytest-cov>=5
+chispa>=0.10
+ruff>=0.6
+databricks-sdk>=0.30
+python-dotenv>=1.0
+pandas>=2.1
+pyarrow>=15
+kaggle>=1.6
+# Azure track only:
+azure-identity>=1.17
+azure-storage-file-datalake>=12.16

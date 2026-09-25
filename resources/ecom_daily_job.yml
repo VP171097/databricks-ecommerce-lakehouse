@@ -1,0 +1,36 @@
+resources:
+  jobs:
+    ecom_daily_job:
+      name: ecom_daily_job
+      tags:
+        project: ecom
+      trigger:
+        pause_status: UNPAUSED
+        file_arrival:
+          url: ${var.landing_path}/
+          min_time_between_triggers_seconds: 60
+      email_notifications:
+        on_failure:
+          - ${var.alert_email}
+      parameters:
+        - name: run_id
+          default: "{{job.run_id}}"
+        - name: pipeline_id
+          default: ${resources.pipelines.ecom_lakehouse_pipeline.id}
+      tasks:
+        - task_key: run_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.ecom_lakehouse_pipeline.id}
+            full_refresh: false
+          max_retries: 1
+          min_retry_interval_millis: 300000
+        - task_key: verify_run
+          depends_on:
+            - task_key: run_pipeline
+          notebook_task:
+            notebook_path: ../notebooks/02_verify_pipeline_run.py
+        - task_key: dq_report
+          depends_on:
+            - task_key: run_pipeline
+          notebook_task:
+            notebook_path: ../notebooks/03_data_quality_report.py

@@ -1,0 +1,34 @@
+bundle:
+  name: ecom_lakehouse
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    default: portfolio
+  landing_path:
+    default: /Volumes/portfolio/ecom_landing/raw
+  alert_email:
+    default: you@yourbrand.com
+
+targets:
+  dev:
+    mode: development          # prefixes names with [dev you] and pauses triggers
+    default: true
+    workspace:
+      host: https://your-free-edition-workspace.cloud.databricks.com
+
+  azure:                       # Azure track (B13)
+    mode: development
+    workspace:
+      host: https://adb-0000000000000000.0.azuredatabricks.net
+    resources:
+      jobs:
+        ecom_daily_job:
+          tasks:
+            - task_key: publish_to_sql
+              depends_on:
+                - task_key: verify_run
+              notebook_task:
+                notebook_path: ./notebooks/04_publish_to_azure_sql.py

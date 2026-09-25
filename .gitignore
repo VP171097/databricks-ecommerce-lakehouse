@@ -1,35 +1,11 @@
-# Byte-compiled / optimized / DLL files
+.venv/
 __pycache__/
-*.py[cod]
-*$py.class
-
-# Environments
+*.pyc
 .env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Databricks
+data/
 .databricks/
-.databricks.env
-
-# Kaggle
-kaggle.json
-
-# IDEs
-.vscode/
-.idea/
-
-# Data
-data/raw/*
-data/batches/*
-!data/raw/.gitkeep
-!data/batches/.gitkeep
-
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
+.DS_Store
