@@ -8,6 +8,7 @@ resources:
       continuous: false
       channel: CURRENT
       configuration:
+        ecom.src_path: ${workspace.file_path}/src
         ecom.landing_path: ${var.landing_path}
       libraries:
         - file:

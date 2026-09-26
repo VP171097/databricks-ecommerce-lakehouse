@@ -1,4 +1,4 @@
-﻿bundle:
+bundle:
   name: ecom_lakehouse
 
 include:
@@ -17,8 +17,7 @@ targets:
     mode: development          # prefixes names with [dev you] and pauses triggers
     default: true
     workspace:
-      profile: Portfolio
-      host: https://dbc-8146206c-a80b.cloud.databricks.com
+      host: https://your-free-edition-workspace.cloud.databricks.com
 
   azure:                       # Azure track (B13)
     mode: development

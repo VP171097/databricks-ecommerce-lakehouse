@@ -1,38 +1,37 @@
-﻿"""Silver: typed, deduplicated, validated tables plus quarantine tables."""
+"""Silver: typed, deduplicated, validated tables plus quarantine tables."""
 
 import os
 import sys
 
-def _setup_sys_path():
-    candidates = []
-    if "__file__" in globals() and __file__:
-        raw = __file__
-        candidates.extend([
-            raw,
-            f"/Workspace/Users/{raw.lstrip('/')}",
-            f"/Workspace/{raw.lstrip('/')}",
-        ])
-    cwd = os.getcwd()
-    candidates.extend([cwd, f"/Workspace/{cwd.lstrip('/')}"])
-
-    for candidate in candidates:
-        curr = candidate
-        for _ in range(7):
-            src_dir = os.path.join(curr, "src")
-            if os.path.isdir(src_dir) and src_dir not in sys.path:
-                sys.path.insert(0, src_dir)
-                return
-            if os.path.isdir(os.path.join(curr, "ecom")) and curr not in sys.path:
-                sys.path.insert(0, curr)
-                return
-            parent = os.path.dirname(curr)
-            if parent == curr:
-                break
-            curr = parent
-
-_setup_sys_path()
-
 from pyspark.sql import SparkSession
+
+spark = SparkSession.getActiveSession()
+
+
+def _add_src_to_path() -> None:
+    """Make `import ecom` work. Pipelines run source files like notebook cells (no __file__),
+    so the src folder comes from the pipeline setting `ecom.src_path` (fallback: __file__)."""
+    candidates = [spark.conf.get("ecom.src_path", "")]
+    try:
+        candidates.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+    except NameError:
+        pass
+    for path in candidates:
+        if path.startswith("/Users/"):
+            path = "/Workspace" + path
+        if path and os.path.isdir(os.path.join(path, "ecom")):
+            path = os.path.abspath(path)
+            if path not in sys.path:
+                sys.path.insert(0, path)
+            return
+    raise ModuleNotFoundError(
+        "Cannot find the ecom package. Set the pipeline configuration key ecom.src_path "
+        "to the workspace path of the repo's src folder."
+    )
+
+
+_add_src_to_path()
+
 from pyspark.sql import functions as F
 
 from ecom import config as C
@@ -53,8 +52,6 @@ from ecom.transformations.quality_rules import (
     failed_rules_column,
     quarantine_filter,
 )
-
-spark = SparkSession.getActiveSession()
 
 STREAMING = {
     "orders": type_orders,
